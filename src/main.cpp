@@ -10,108 +10,8 @@
 #include <X11/keysym.h>
 #include <X11/XKBlib.h>
 #include <format>
-
-namespace Keys{
-
-            enum KEYSFORKEYCODE {
-                //Letters
-                A = XK_A,
-                B = XK_B,
-                C = XK_C,
-                D = XK_D,
-                E = XK_E,
-                F = XK_F,
-                G = XK_G,
-                H = XK_H,
-                I = XK_I,
-                J = XK_J,
-                K = XK_K,
-                L = XK_L,
-                M = XK_M,
-                N = XK_N,
-                O = XK_O,
-                P = XK_P,
-                Q = XK_Q,
-                R = XK_R,
-                S = XK_S,
-                T = XK_T,
-                U = XK_U,
-                V = XK_V,
-                W = XK_W,
-                X = XK_X,
-                Y = XK_Y,
-                Z = XK_Z,
-
-                //Nums
-                KEY_0 = XK_0,
-                KEY_1 = XK_1,
-                KEY_2 = XK_2,
-                KEY_3 = XK_3,
-                KEY_4 = XK_4,
-                KEY_5 = XK_5,
-                KEY_6 = XK_6,
-                KEY_7 = XK_7,
-                KEY_8 = XK_8,
-                KEY_9 = XK_9,
-
-                //Fn
-                F1  = XK_F1,
-                F2  = XK_F2,
-                F3  = XK_F3,
-                F4  = XK_F4,
-                F5  = XK_F5,
-                F6  = XK_F6,
-                F7  = XK_F7,
-                F8  = XK_F8,
-                F9  = XK_F9,
-                F10 = XK_F10,
-                F11 = XK_F11,
-                F12 = XK_F12,
-
-                //modifiers
-                Shift_L = XK_Shift_L,
-                Shift_R = XK_Shift_R,
-                Control_L = XK_Control_L,
-                Control_R = XK_Control_R,
-                Alt_L = XK_Alt_L,
-                Alt_R = XK_Alt_R,
-                Super_L = XK_Super_L,
-                Super_R = XK_Super_R,
-                Meta_L = XK_Meta_L,
-                Meta_R = XK_Meta_R,
-
-                //Special keys
-                Escape = XK_Escape,
-                Tab = XK_Tab,
-                Return = XK_Return,
-                Backspace = XK_BackSpace,
-                Space = XK_space,
-                Insert = XK_Insert,
-                Delete = XK_Delete,
-                Home = XK_Home,
-                End = XK_End,
-                Page_Up = XK_Page_Up,
-                Page_Down = XK_Page_Down,
-                Left = XK_Left,
-                Right = XK_Right,
-                Up = XK_Up,
-                Down = XK_Down,
-                Caps_Lock = XK_Caps_Lock,
-                Num_Lock = XK_Num_Lock,
-                Scroll_Lock = XK_Scroll_Lock,
-                Minus = XK_minus,
-                Equal = XK_equal,
-                Bracket_Left = XK_bracketleft,
-                Bracket_Right = XK_bracketright,
-                Semicolon = XK_semicolon,
-                Apostrophe = XK_apostrophe,
-                Grave = XK_grave,
-                Backslash = XK_backslash,
-                Comma = XK_comma,
-                Period = XK_period,
-                Slash = XK_slash,
-            };
-        }
+#include <vector>
+#include <thread>
 
     namespace event {
         
@@ -124,6 +24,51 @@ namespace Keys{
         };
 
     }
+
+class Utils {
+
+    public:
+
+        static std::vector<std::string> splitIgnoringContainedInBrackets(std::string string, char delimitier) {
+            std::vector<std::string> splitVector = {};
+            std::string currentString = "";
+            bool inBrackets = false;
+            for (int i = 0; i <= string.length(); i++) {
+                if ((string[i] == delimitier && (!inBrackets)) || i == string.length()) {
+                    splitVector.push_back(currentString);
+                    currentString = "";
+                }
+                else if (string[i] == '(') {
+                    currentString += string[i];
+                    inBrackets = true;
+                }
+                else if (string[i] == ')') {
+                    currentString += string[i];
+                    inBrackets = false;
+                }
+                else {
+                    currentString += string[i];
+                }
+            }
+            return splitVector;
+        }
+
+        static std::vector<int> convertStringToCoords (std::string coordsAsString) {
+            std::string currentString = "";
+            std::vector<int> coords; 
+            for (int i = 0; i < coordsAsString.length(); i++) {
+                if (coordsAsString[i] == ',' || coordsAsString[i] == ')') {
+                    coords.push_back(stoi(currentString));
+                    currentString = "";
+                }
+                else if (coordsAsString[i] != '(' && coordsAsString[i] != ')') {
+                    currentString += coordsAsString[i];
+                }
+            }
+            return coords;
+        }
+
+};
 
 class InputHandler {
 
@@ -147,8 +92,13 @@ class InputHandler {
             XFlush(display);
         }
 
-        void clickMouse(bool toPress) {
-            XTestFakeButtonEvent(this->getDisplay(), 1, toPress, CurrentTime);
+        void clickMouse(bool toPress, int mouseButton) {
+            XTestFakeButtonEvent(this->getDisplay(), mouseButton, toPress, CurrentTime);
+            XFlush(this->getDisplay());
+        }
+
+        void pressKey(bool toPress, int keyCode) {
+            XTestFakeKeyEvent(this->getDisplay(), keyCode, toPress, CurrentTime);
             XFlush(this->getDisplay());
         }
 
@@ -170,12 +120,28 @@ class InputHandler {
             return this->display;
         }
 
-        bool getPressed() {
-            return this->pressed; 
+        void releaseAllKeys() {
+            const bool RELEASE = false;
+            int minKeyCode, maxKeyCode;
+            XDisplayKeycodes(this->getDisplay(), &minKeyCode, &maxKeyCode);
+            for (int keyCode = minKeyCode; keyCode <= maxKeyCode; keyCode++) {
+                this->pressKey(RELEASE, keyCode);
+            }
+            XFlush(this->getDisplay());
         }
 
-        void setPressed(bool pressed) {
-            this->pressed = pressed;
+        void releaseAllMouseButtons () {
+            const bool RELEASE = false;
+            unsigned char map[256];
+            int numButtons = XGetPointerMapping(display, map, sizeof(map));
+            for (int mouseButton = 1; mouseButton < numButtons; ++mouseButton) {
+                this->clickMouse(RELEASE, mouseButton);
+            }
+        }
+
+        void releaseAllInputs () {
+            releaseAllKeys();
+            releaseAllMouseButtons();
         }
         
         void recordInputEvent() {
@@ -196,7 +162,7 @@ class InputHandler {
             std::string saveString = "";
             std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
             int eventCounter = 0;
-            while (eventCounter < 100) {
+            while (eventCounter < 10000) {
                 XNextEvent(display, &event);
                 if (event.xcookie.type == GenericEvent  && XGetEventData(display, &event.xcookie)) {                    
                     if (event.xcookie.evtype == XI_RawMotion) {
@@ -233,8 +199,8 @@ class InputHandler {
 
         long long getTimestamp (std::chrono::time_point<std::chrono::system_clock> start) {
             auto current = std::chrono::system_clock::now();
-            long long currentSinceEpoch = std::chrono::duration_cast<std::chrono::nanoseconds>(current.time_since_epoch()).count();
-            long long startSinceEpoch = std::chrono::duration_cast<std::chrono::nanoseconds>(start.time_since_epoch()).count();
+            long long currentSinceEpoch = std::chrono::duration_cast<std::chrono::microseconds>(current.time_since_epoch()).count();
+            long long startSinceEpoch = std::chrono::duration_cast<std::chrono::microseconds>(start.time_since_epoch()).count();
             long long durationSinceStart = currentSinceEpoch - startSinceEpoch;
             return durationSinceStart;
         }
@@ -246,31 +212,65 @@ class InputHandler {
             return;
         }
 
+        void playMacro (std::string fileName) {
+            std::ifstream file(fileName);
+            std::string line;
+            Utils utils;
+            long long timeDiff = 0; 
+            long long time = 0;
+            long long prevTime = 0;
+            while (file.is_open()) {
+                while (std::getline(file, line)) {
+                    std::vector<std::string> eventVector;
+                    eventVector = utils.splitIgnoringContainedInBrackets(line, ',');
+                    prevTime = time;
+                    time = stol(eventVector[2]);
+                    timeDiff = time - prevTime;
+                    std::this_thread::sleep_for(std::chrono::microseconds(timeDiff));
+                    if (stoi(eventVector[0]) == event::MouseMotion) {
+                        std::vector<int> mouseCoords = utils.convertStringToCoords(eventVector[1]);
+                        this->moveMouseTo(mouseCoords[0],mouseCoords[1]);
+                    }
+                    else if (stoi(eventVector[0]) == event::MousePressed) {
+                        int mouseButton = stoi(eventVector[1]);
+                        this->clickMouse(true, mouseButton);
+                    }
+                    else if (stoi(eventVector[0]) == event::MouseReleased) {
+                        int mouseButton = stoi(eventVector[1]);
+                        this->clickMouse(false,mouseButton);
+                    }
+                    else if (stoi(eventVector[0]) == event::KeyPressed) {
+                        int keyCode = stoi(eventVector[1]);
+                        this->pressKey(true, keyCode);
+                        break;
+                    }
+                    else if (stoi(eventVector[0]) == event::keyReleased) {
+                        int keyCode = stoi(eventVector[1]);
+                        this->pressKey(true, keyCode);
+                        break;
+                    }
+                    else {
+                        file.close();
+                        this->releaseAllInputs();
+                    }
+                }
+            }
+            return;
+        }
+
     private:
 
         int x;
         int y;
         Display* display;
-        bool pressed;
+
 
 };
 
-
-class Main {
-
-    void sendKeyTest(Display *display, int keyCode, bool toPress) {
-        XTestGrabControl(display,True);
-        KeyCode keycode = XKeysymToKeycode(display, keyCode);
-            XTestFakeKeyEvent(display,keycode,toPress,CurrentTime);
-        XFlush(display);
-        return;
-    }
-
-};
 
 int main() {
     Display* display = XOpenDisplay(NULL);
     InputHandler ih(display);
-    ih.recordInputEvent();
+    ih.playMacro("test1.csv");
     return 0;
 }
