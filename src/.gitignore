@@ -1,0 +1,23 @@
+# Object files
+*.o
+
+# Qt build system
+Makefile
+*.autosave
+*.qmake.stash
+
+# Qt Creator settings (optional)
+*.user
+*.pro.user
+*.pro.user.*
+
+# Binary files
+*.exe
+*.out
+*.app
+*.dll
+*.so
+
+# OS metadata
+.DS_Store
+Thumbs.db
