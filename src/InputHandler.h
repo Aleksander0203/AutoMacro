@@ -90,7 +90,7 @@ class InputHandler {
         }
 
         bool getIsRecording() {
-            this->isRecording;
+            return this->isRecording;
         }
 
         int getX() {
@@ -350,37 +350,41 @@ class InputHandler {
         }
 
         std::string removeUnreleasedPressesFromSave(std::string saveString) {
-            Utils utils;
-            std::map<int, bool> keyPressed;
-            std::map<int, int> lineOfLastPressOfKeys;
-            std::istringstream firstStream(saveString);
-            std::ostringstream output;
-            std::string line;
-            int lineNum = 0;
-            while (std::getline(firstStream,line)) {
-                std::vector<std::string> eventVector = utils.splitIgnoringContainedInBrackets(line, ',');
-                if (std::stoi(eventVector[0]) == event::KeyPressed) {
-                    keyPressed[std::stoi(eventVector[1])] = true;
-                    lineOfLastPressOfKeys[std::stoi(eventVector[1])] = lineNum;
-                } 
-                else if (std::stoi(eventVector[0]) == event::keyReleased) {
-                    keyPressed[std::stoi(eventVector[1])] = false;
-                }
-                lineNum++;  
-            }
-            lineNum = 0;
-            std::vector<int> linesToRemove;
-            for (auto key: keyPressed) {
-                linesToRemove.push_back(lineOfLastPressOfKeys[key.first]);
-            }
-            std::istringstream secondStream(saveString);
-            while (std::getline(secondStream,line)) {
-                if (std::find(linesToRemove.begin(), linesToRemove.end(), lineNum) == linesToRemove.end())
-                    output << line << '\n';
-                ++lineNum;
-            }
-            return output.str();
+          Utils utils;
+          std::map<int, bool> keyPressed;
+          std::map<int, int> lineOfLastPressOfKeys;
+          std::istringstream firstStream(saveString);
+          std::string line;
+          int lineNum = 0;
+          while (std::getline(firstStream, line)) {
+              std::vector<std::string> eventVector = utils.splitIgnoringContainedInBrackets(line, ',');
+              if (std::stoi(eventVector[0]) == event::KeyPressed) {
+                  keyPressed[std::stoi(eventVector[1])] = true;
+                  lineOfLastPressOfKeys[std::stoi(eventVector[1])] = lineNum;
+              } 
+              else if (std::stoi(eventVector[0]) == event::keyReleased) {
+                  keyPressed[std::stoi(eventVector[1])] = false;
+              }
+              lineNum++;  
+          }
+
+    std::vector<int> linesToRemove;
+    for (auto& [key, stillPressed] : keyPressed) {
+        if (stillPressed) {
+            linesToRemove.push_back(lineOfLastPressOfKeys[key]);
         }
+    }
+
+    std::istringstream secondStream(saveString);
+    std::ostringstream output;
+    lineNum = 0;
+    while (std::getline(secondStream, line)) {
+        if (std::find(linesToRemove.begin(), linesToRemove.end(), lineNum) == linesToRemove.end())
+            output << line << '\n';
+        ++lineNum;
+    }
+    return output.str();
+}
 
         void requestInterrupt() {
             interruptFlag = true;

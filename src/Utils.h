@@ -12,7 +12,7 @@ class Utils {
             std::vector<std::string> splitVector = {};
             std::string currentString = "";
             bool inBrackets = false;
-            for (int i = 0; i <= string.length(); i++) {
+            for (size_t i = 0; i <= string.length(); i++) {
                 if ((string[i] == delimitier && (!inBrackets)) || i == string.length()) {
                     splitVector.push_back(currentString);
                     currentString = "";
@@ -35,7 +35,7 @@ class Utils {
         static std::vector<int> convertStringToCoords (std::string coordsAsString) {
             std::string currentString = "";
             std::vector<int> coords; 
-            for (int i = 0; i < coordsAsString.length(); i++) {
+            for (size_t i = 0; i < coordsAsString.length(); i++) {
                 if (coordsAsString[i] == ',' || coordsAsString[i] == ')') {
                     coords.push_back(stoi(currentString));
                     currentString = "";

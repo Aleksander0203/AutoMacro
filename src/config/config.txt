@@ -1,3 +1,3 @@
-defaultFile=/home/aleksander/Documents/Coding_Projects/AutoMacro/src/macros/newMacroTest2.csv
-macroSpeed=5.000000
-loopCount=2
+defaultFile=/home/aleksander/Documents/Projects/AutoMacro/src/macros/newMacro.csv
+macroSpeed=1.000000
+loopCount=-1

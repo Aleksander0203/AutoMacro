@@ -85,7 +85,7 @@ class MainWindow : public QMainWindow {
         }
 
         void newMacroFile() {
-            Config config = this->getConfig();
+            Config& config = this->getConfig();
             if (this->getIsPlaying() || this->getIsRecording()) {
                 QMessageBox::warning(this, "Warning", "Cannot create new file while recording or playing macro.");
                 return;
@@ -133,10 +133,10 @@ class MainWindow : public QMainWindow {
             QPushButton *startBtn = getStartButton();
             QTimer *shortcutTimer = new QTimer(this);
             connect(shortcutTimer, &QTimer::timeout, [this, &ih] () {
-                if (ih.isPlayShortcutPressed() && !this->getIsPlaying()) {
+                if (ih.isPlayShortcutPressed() && !this->getIsPlaying() && !this->getIsRecording()) {
                     this->getStartButton()->click();
                 }
-                if (ih.isRecordShortcutPressed() && !this->getIsRecording()) {
+                if (ih.isRecordShortcutPressed() && !this->getIsRecording() && !this->getIsPlaying()) {
                     this->getRecordButton()->click();
                 }
             });
